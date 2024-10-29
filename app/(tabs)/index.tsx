@@ -1,70 +1,121 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Text, View, StyleSheet, Pressable, ScrollView } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import Button from "@/components/button";
+import * as ImagePicker from 'expo-image-picker';
+import { useState } from "react";
+import * as FileSystem from 'expo-file-system';
+import { useRouter, Link, useNavigation } from "expo-router";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
 
-export default function HomeScreen() {
+  const router = useRouter();
+  const navigation = useNavigation();
+
+  const [selectedFileUri, setSelectedFileUri] = useState<string>(String);
+  const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
+  const [selectedFileData, setSelectedFileData] = useState<string | undefined>();
+
+  const documentPicker = async()=>{
+
+    setSelectedFileData("");
+    setSelectedFileName("");
+    // setSelectedFileUri("");
+    
+    try{
+      let result = await DocumentPicker.getDocumentAsync({
+        type: "text/plain",
+      });
+  
+      if(!result.canceled){
+        setSelectedFileName(result.assets[0].name);
+
+        if(!(result.assets[0].name)?.endsWith(".TXT")){
+          alert('Vueillez selectionner un fichier texte (.txt) !');
+          setSelectedFileName("");
+
+          return;
+        }
+
+        setSelectedFileUri(result.assets[0].uri);
+
+        let fileData = await FileSystem.readAsStringAsync(result.assets[0].uri);
+        setSelectedFileData(fileData);
+        console.log(fileData);
+  
+        console.log(selectedFileUri);
+        console.log(selectedFileName);
+      }
+      else{
+        alert("Vous n'avez selectionné aucun fichier");
+      }
+    }catch(e){
+      setSelectedFileData("");
+      setSelectedFileName("");
+      setSelectedFileUri("");
+      alert("Une erreur est survenue !");
+      console.log(e);
+    }
+    
+
+  }
+
+  const goToEditscreen = () => {
+    router.push(`/details?fileData=${selectedFileData}`);
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+     <View style={styles.fileBlock}>
+        <Text style={styles.message}> appuyer sur le bouton pour ouvrir une fiche d'inventaire </Text>
+        <Button label="Ouvrir" icon="file-tray-outline" onPress={documentPicker} type="primary"/>
+        {/* <Text style={styles.text}>fichier selectionné: {selectedFileName}</Text> */}
+      </View>
+      { selectedFileName ? (
+        <View style={{width:"100%"}}>
+        <View style={{display:"flex", flexDirection:"row", justifyContent:"space-between", alignItems:"baseline", backgroundColor: "#ffffff", padding:10}}>
+          <Text style={styles.text}>Contenu du fichier: </Text>
+          <Button label="Editer" icon="pencil-sharp" onPress={goToEditscreen} type="outline"/>
+        </View>
+        <ScrollView style={styles.content} >
+          <Text>{selectedFileData}</Text>
+        </ScrollView>
+        </View>
+      ) : (
+        <View></View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container:{
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff5f7",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  fileBlock:{
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    // backgroundColor: "#a08e8e",
+    // maxHeight: "auto",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  message:{
+    fontSize: 20,
+    marginBottom: 20,
+    textAlign: "center",
   },
-});
+  text:{
+    marginTop: 10,
+  },
+  content:{
+    borderTopWidth: 0.5,
+    borderTopColor: "#025c581a",
+    maxHeight: 250,
+    overflow: "scroll",
+    backgroundColor: "#fff",
+    // padding: 10,
+    paddingLeft: 10,
+  }
+})
