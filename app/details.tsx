@@ -15,28 +15,58 @@ export default function DetailsScreen(){
     let [products, setProducts] = useState<Product[]>([]);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [searchText, setSearchText] = useState<string>();
-    let lines = (fileData.toString()).split('\r\n');
     const [modalVisible, setModalVisible] = useState<boolean>(false);
-    // console.log(lines);
-    
+    const [selectedPoduct, setSelectedProduct] = useState<Product>();
+    const [selectedIndex, setSelectedIndex] = useState<Number>();
 
-    let initialProducts = [
-        new Product("CDT1", "LAIT BROLI CHOCOLOCO PULS TROIS 1KG", "CARTON", 15),
-        new Product("CDT2", "BISCUIT NAYA 150G", "PAQUET", 4),
-        new Product("CDT3", "EAU SUPERMONT 10L", "BIDON", 4),
-        new Product("CDT4", "LAIT BROLI 1KG", "CARTON", 4),
-        new Product("CDT5", "BISCUIT NAYA 150G", "PAQUET", 4),
-        new Product("CDT6", "EAU SUPERMONT 10L", "BIDON", 4),
-        new Product("CDT7", "LAIT BROLI 1KG", "CARTON", 4),
-        new Product("CDT8", "BISCUIT NAYA 150G", "PAQUET", 4),
-        new Product("CDT9", "EAU SUPERMONT 10L", "BIDON", 4),
-        new Product("CDT10", "LAIT BROLI 1KG", "CARTON", 4),
-        new Product("CDT11", "BISCUIT NAYA 150G", "PAQUET", 4),
-        new Product("CDT12", "EAU SUPERMONT 10L", "BIDON", 4),
-        new Product("CDT13", "LAIT BROLI 1KG", "CARTON", 4),
-        new Product("CDT14", "BISCUIT NAYA 150G", "PAQUET", 4),
-        new Product("CDT15", "EAU SUPERMONT 10L", "BIDON", 4),
+    // let lines = (fileData.toString()).split("\n");
+    // console.log(lines);
+    let initialProducts = [] as Product[];
+
+    let lines = [
+        'CDT1;LAIT BROLI CHOCOLOCO PULS TROIS 1KG(CARTON);15',
+        'CDT2;BISCUIT NAYA 150G(PAQUET);4',
+        'CDT3;EAU SUPERMONT 10L(BIDON);4',
+        'CDT1;LAIT BROLI 1KG(CARTON);23',
+        'CDT2;BISCUIT NAYA 150G(PAQUET);5',
+        'CDT3;EAU SUPERMONT 10L(BIDON);12',
+        'CDT1;LAIT BROLI 1KG(CARTON);23',
+        'CDT2;BISCUIT NAYA 150G(PAQUET);5',
+        'CDT3;EAU SUPERMONT 10L(BIDON);12',
+        'CDT1;LAIT BROLI 1KG(CARTON);23',
+        'CDT2;BISCUIT NAYA 150G(PAQUET);5',
+        'CDT3;EAU SUPERMONT 10L(BIDON);12',
+        'CDT1;LAIT BROLI 1KG(CARTON);23',
+        'CDT2;BISCUIT NAYA 150G(PAQUET);5',
+        'CDT3;EAU SUPERMONT 10L(BIDON);12',
     ];
+
+    lines.forEach((line, index)=>{
+        let lineSplit = line.split(";");
+        let namecdt = lineSplit[1].split('(');
+
+        let product = new Product(lineSplit[0], namecdt[0], '('+namecdt[1], Number(lineSplit[2]));
+
+        initialProducts[index] = new Product(lineSplit[0], namecdt[0], '('+namecdt[1], Number(lineSplit[2]));
+    });
+
+    // let initialProducts = [
+    //     new Product("CDT1", "LAIT BROLI CHOCOLOCO PULS TROIS 1KG", "CARTON", 15),
+    //     new Product("CDT2", "BISCUIT NAYA 150G", "PAQUET", 4),
+    //     new Product("CDT3", "EAU SUPERMONT 10L", "BIDON", 4),
+    //     new Product("CDT4", "LAIT BROLI 1KG", "CARTON", 4),
+    //     new Product("CDT5", "BISCUIT NAYA 150G", "PAQUET", 4),
+    //     new Product("CDT6", "EAU SUPERMONT 10L", "BIDON", 4),
+    //     new Product("CDT7", "LAIT BROLI 1KG", "CARTON", 4),
+    //     new Product("CDT8", "BISCUIT NAYA 150G", "PAQUET", 4),
+    //     new Product("CDT9", "EAU SUPERMONT 10L", "BIDON", 4),
+    //     new Product("CDT10", "LAIT BROLI 1KG", "CARTON", 4),
+    //     new Product("CDT11", "BISCUIT NAYA 150G", "PAQUET", 4),
+    //     new Product("CDT12", "EAU SUPERMONT 10L", "BIDON", 4),
+    //     new Product("CDT13", "LAIT BROLI 1KG", "CARTON", 4),
+    //     new Product("CDT14", "BISCUIT NAYA 150G", "PAQUET", 4),
+    //     new Product("CDT15", "EAU SUPERMONT 10L", "BIDON", 4),
+    // ];
 
     //initialisation de la liste de produits lorsque le composant est monté
     useEffect(() => {
@@ -62,12 +92,29 @@ export default function DetailsScreen(){
         console.log(products);
     }
 
-    const updateQuantity = (id: string) => {
+    const updateQuantity = (quantity: string) => {
+
+        selectedPoduct?.setQuantity(Number(quantity));
+        setSelectedProduct(selectedPoduct);
+
+        initialProducts[Number(selectedIndex)]?.setQuantity(Number(quantity));
+        setProducts(initialProducts);
+
+    }
+
+    const openModal = (product : Product, index: Number) => {
+        setSelectedProduct(product);
+        setSelectedIndex(index);
+
         setModalVisible(true);
+
+        return null;
     }
 
     const closeModal = ()=> {
         setModalVisible(false);
+        console.log(products[Number(selectedIndex)]);
+
     }
 
     return (
@@ -88,7 +135,7 @@ export default function DetailsScreen(){
             <FlatList
                 data={products} 
                 renderItem={ 
-                    ({item}) => <Text onPress={()=>setModalVisible(true)} style={styles.productCard}> <ProductComponent product={item}/> </Text>
+                    ({item, index}) => <Text onPress={()=>{openModal(item, index)}} style={styles.productCard}> <ProductComponent product={item}/> </Text>
                 }
                 keyExtractor={(item) => item.getId()}
                 style={styles.flatlist}
@@ -112,11 +159,12 @@ export default function DetailsScreen(){
             >
             </FlatList>
 
-            <Modal transparent={true} animationType="slide" visible={modalVisible}>
+            <Modal transparent={true} animationType="slide" visible={modalVisible} onPointerLeave={()=>setModalVisible(false)}>
                 <View style={styles.modal}>
-                    <Ionicons name="close-circle" size={24} color="#fff" onPress={closeModal} style={styles.closeButton}></Ionicons>
-                    <Text>azerty</Text>
-                    <TextInput placeholder="Quantité" value="5"></TextInput>
+                    <Ionicons name="close-circle" size={48} color="#fff" onPress={closeModal} style={styles.closeButton}></Ionicons>
+                    <Text> {selectedPoduct?.getName()} </Text>
+                    <Text> {selectedPoduct?.getCondtionment()} </Text>
+                    <TextInput placeholder="Quantité" value={(selectedPoduct?.getQuantity())?.toString()} onChangeText={(text)=>{updateQuantity(text)}} selectTextOnFocus keyboardType="numeric" style={styles.input} ></TextInput>
                 </View>
             </Modal>
 
@@ -150,7 +198,7 @@ const styles = StyleSheet.create({
     modal:{
        backgroundColor: "#dfeaee",
        width: "100%",
-       height: "25%",
+       height: "30%",
        position: "absolute",
        bottom: 0,
        borderTopRightRadius: 25,
@@ -160,7 +208,15 @@ const styles = StyleSheet.create({
     },
     closeButton:{
         position: "absolute",
-        top: 30,
-        right: 20,
+        top: 10,
+        right: 10,
+    },
+    input:{
+        height: 50,
+        width: "100%",
+        backgroundColor: "#fff",
+        marginTop: 10,
+        paddingHorizontal: 10,
+        borderRadius: 10,
     }
 })
