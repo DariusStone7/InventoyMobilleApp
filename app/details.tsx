@@ -3,7 +3,7 @@ import { useLocalSearchParams } from "expo-router";
 import * as FileSystem from 'expo-file-system';
 import { useState, useEffect } from "react";
 import Product from "@/models/Product";
-import ProductComponent from "@/components/product";
+import ProductComponent from "@/components/productCard";
 import { RefreshControl } from "react-native-gesture-handler";
 import modal from "@/components/modal";
 import { Ionicons } from "@expo/vector-icons";
@@ -131,7 +131,7 @@ export default function DetailsScreen(){
     const closeModal = () => {
 
         setModalVisible(false);
-        console.log('Produit mis à jour: ' + products[Number(selectedIndex)]);
+        console.log('Produit mis à jour: ', products[Number(selectedIndex)]);
 
     }
 
