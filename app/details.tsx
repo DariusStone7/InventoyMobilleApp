@@ -1,18 +1,16 @@
-import { View, Text, TextInput, ScrollView, StyleSheet, FlatList, Pressable, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform} from "react-native";
+import { View, Text, TextInput, ScrollView, StyleSheet, FlatList, Pressable, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform, Button} from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import * as FileSystem from 'expo-file-system';
 import { useState, useEffect } from "react";
 import Product from "@/models/Product";
 import ProductComponent from "@/components/productCard";
-import { RefreshControl } from "react-native-gesture-handler";
-import modal from "@/components/modal";
 import { Ionicons } from "@expo/vector-icons";
-
+import { Stack } from "expo-router";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function DetailsScreen(){
 
-    const { fileData } = useLocalSearchParams();
-    const [fileLines, setFileLines] = useState<string[]>([]);
+    const { fileData, fileUri } = useLocalSearchParams();
     let [products, setProducts] = useState<Product[]>([]);
     let [initialProducts, setInitialProducts] = useState<Product[]>([]);
     let [refreshing, setRefreshing] = useState<boolean>(false);
@@ -21,33 +19,11 @@ export default function DetailsScreen(){
     let [selectedPoduct, setSelectedProduct] = useState<Product>();
     let [selectedIndex, setSelectedIndex] = useState<Number>();
 
-    // let lines = (fileData.toString()).split("\n");
-    // console.log(lines);
-    // let initialProducts = [] as Product[]
-
-    let lines = [
-        'CDT1;LAIT BROLI CHOCOLOCO PULS TROIS 1KG(CARTON);15',
-        'CDT2;BISCUIT NAYA 150G(PAQUET);4',
-        'CDT3;EAU SUPERMONT 10L(BIDON);4',
-        'CDT4;LAIT BROLI 1KG(CARTON);23',
-        'CDT5;BISCUIT NAYA 150G(PAQUET);5',
-        'CDT6;EAU SUPERMONT 10L(BIDON);12',
-        'CDT7;LAIT BROLI 1KG(CARTON);23',
-        'CDT8;BISCUIT NAYA 150G(PAQUET);5',
-        'CDT9;EAU SUPERMONT 10L(BIDON);12',
-        'CDT10;LAIT BROLI 1KG(CARTON);23',
-        'CDT11;BISCUIT NAYA 150G(PAQUET);5',
-        'CDT12;EAU SUPERMONT 10L(BIDON);12',
-        'CDT13;LAIT BROLI 1KG(CARTON);23',
-        'CDT14;BISCUIT NAYA 150G(PAQUET);5',
-        'CDT15;EAU SUPERMONT 10L(BIDON);12',
-    ];
-
 
     //initialisation de la liste de produits lorsque le composant est monté
     useEffect( () => {
 
-        let productsList = initProducts(lines);
+        let productsList = initProducts(fileData);
         setInitialProducts(productsList);
         setProducts(productsList);
 
@@ -65,19 +41,25 @@ export default function DetailsScreen(){
 
 
     //Formatage du contenu du fichier en un tableau de produit
-    const initProducts = (lines : String[]) => {
+    const initProducts = (data : string | string[]) => {
 
+        data = (fileData.toString()).split(',');
+        data = data.filter( item => item !== "" );
+        // console.log(data);
+            
         let products = [] as Product[];
 
-        lines.forEach( (line, index) => {
+        data.forEach( (line, index) => {
 
             let lineSplit = line.split(";");
-            let namecdt = lineSplit[1].split('(');
-            let product = new Product(lineSplit[0], namecdt[0], '('+namecdt[1], Number(lineSplit[2]));
+            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('(') -1);
+            let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
+            let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
     
             products.push(product);
 
         });
+        console.log(products);
 
         return products;
 
@@ -103,15 +85,35 @@ export default function DetailsScreen(){
     //Mis à jour de la quantité du produit selectionné avec la nouvelle valeur saisir
     const updateQuantity = (quantity: string) => {
 
+        if(quantity.includes('.')){
+            setTimeout(()=>1, 1000);
+        }
         let product = new Product(selectedPoduct?.getId(), selectedPoduct?.getName(), selectedPoduct?.getCondtionment(), selectedPoduct?.getQuantity());
 
         product?.setQuantity(Number(quantity));
 
         setSelectedProduct(product);
 
-        initialProducts[Number(selectedIndex)]?.setQuantity(Number(quantity));
-        setInitialProducts(initialProducts);
-        setProducts(initialProducts);
+        initialProducts.forEach((product) => {
+            if( product.getId() == selectedPoduct?.getId()){
+                product.setQuantity(Number(quantity));
+                return;
+            }
+        });
+
+        products.forEach((product, index) => {
+            if( product.getId() == selectedPoduct?.getId()){
+                product.setQuantity(Number(quantity));
+                setSelectedIndex(index);
+                return;
+            }
+        });
+        
+        // initialProducts[Number(selectedIndex)]?.setQuantity(Number(quantity));
+        
+        // products[Number(selectedIndex)]?.setQuantity(Number(quantity));
+        // setInitialProducts(products);
+        setProducts(products);
 
     }
 
@@ -135,13 +137,37 @@ export default function DetailsScreen(){
 
     }
 
+    const saveInventoryToFile = async() => {
+        let data = "";
+        products.forEach( (product) => {
+            data += product.getId() + ";" + product.getName() + product.getCondtionment() + ";" + product.getQuantity() + "\r\n";
+        });
+        FileSystem.writeAsStringAsync((fileUri).toString(), data)
+            .then(response => alert("success"))
+            .catch(e => alert("error"));
+
+        await Sharing.shareAsync((fileUri).toString());
+
+        console.log(data);
+        console.log(fileUri);
+
+    }
 
     //Vue à afficher à l'écran
     return (
+        
         <View style={ {paddingVertical: 20, paddingHorizontal:10, backgroundColor: "#eff5f7",} }>
+
+            <Stack.Screen 
+                options={{
+                    headerRight: () => <Text onPress={saveInventoryToFile} style={styles.saveButton}> Enregistrer </Text> 
+                }}
+             />
+
             <TextInput 
                 value={searchText}
                 placeholder="Rechercher"
+                selectTextOnFocus
                 onChangeText={
                     (key) => {
                         setSearchText(key);
@@ -163,14 +189,14 @@ export default function DetailsScreen(){
                 onRefresh={onRefresh}
                 style={styles.flatlist}
                 showsVerticalScrollIndicator={ false } 
-                ListFooterComponent={ () => <Text> Nombre de Produits: { products.length } </Text> }
+                ListFooterComponent={ () => <Text> Nombre de Produits: { initialProducts.length } / { products.length } </Text> }
                 ListEmptyComponent={ () => <Text style={ {color: "#ff9900"} }> Aucun produit trouvé ! </Text> }
                 
             >
             </FlatList>
 
             <Modal transparent={ true } animationType="slide" visible={ modalVisible } onPointerLeave={ () => setModalVisible(false) }>
-                <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} }>
+                {/* <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} }> */}
                     <TouchableOpacity onPress={ closeModal } style={ styles.modalOverlay } activeOpacity={ 1 }>
                         <TouchableOpacity style={ styles.modal } activeOpacity={ 1 }>
                             <Ionicons name="checkmark-circle-outline" size={ 48 } color="#02c4ba" onPress={ closeModal } style={ styles.closeButton }></Ionicons>
@@ -180,7 +206,7 @@ export default function DetailsScreen(){
                             <TextInput onBlur={ closeModal } placeholder="Quantité" value={ (selectedPoduct?.getQuantity())?.toString() } onChangeText={ (text) => {updateQuantity(text)} } selectTextOnFocus keyboardType="numeric" style={ styles.input } />
                         </TouchableOpacity>
                     </TouchableOpacity>
-                </KeyboardAvoidingView>
+                {/* </KeyboardAvoidingView> */}
             </Modal>
 
         </View>
@@ -222,7 +248,6 @@ const styles = StyleSheet.create({
        borderTopLeftRadius: 25,
        paddingHorizontal: 20,
        paddingVertical: 50,
-       
     },
     modalOverlay:{
         flex: 1,
@@ -241,5 +266,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         borderRadius: 10,
         marginTop: 4,
+    },
+    saveButton:{
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     }
 })

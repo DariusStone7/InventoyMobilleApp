@@ -37,13 +37,13 @@ export default function Index() {
         }
 
         setSelectedFileUri(result.assets[0].uri);
-
-        let fileData = await FileSystem.readAsStringAsync(result.assets[0].uri);
+        
+        let fileData = await FileSystem.readAsStringAsync(result.assets[0].uri, {encoding: FileSystem.EncodingType.UTF8});
         setSelectedFileData(fileData);
-        console.log(fileData);
+        // console.log(fileData.split(/\r?\n/));
   
-        console.log(selectedFileUri);
-        console.log(selectedFileName);
+        // console.log(selectedFileUri);
+        // console.log(selectedFileName);
       }
       else{
         alert("Vous n'avez selectionné aucun fichier");
@@ -60,7 +60,8 @@ export default function Index() {
   }
 
   const goToEditscreen = () => {
-    router.push(`/details?fileData=${selectedFileData}`);
+    let data = selectedFileData?.split(/\r?\n/);
+    router.push(`/details?fileData=${data}&fileUri=${selectedFileUri}`);
   }
 
   return (

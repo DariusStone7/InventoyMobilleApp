@@ -11,7 +11,7 @@ export default function RootLayout() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{headerShown: true, title:"KONTROL"}}/>
-      <Stack.Screen name="details" options={{headerShown: true, title:"Détails de l'inventaire"}}/>
+      <Stack.Screen name="details" options={{headerShown: true, title:"Détails"}}/>
       <Stack.Screen name="+not-found" />
     </Stack>
   );

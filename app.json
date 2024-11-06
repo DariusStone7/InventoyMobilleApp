@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/logoSansFond.png",
       "resizeMode": "contain",
-      "backgroundColor": "#fff"
+      "backgroundColor": "#fff"  
     },
     "ios": {
       "supportsTablet": true
