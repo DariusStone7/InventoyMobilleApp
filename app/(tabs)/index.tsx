@@ -27,9 +27,12 @@ export default function Index() {
       });
   
       if(!result.canceled){
+        
+        console.log(result);
+
         setSelectedFileName(result.assets[0].name);
 
-        if(!(result.assets[0].name)?.endsWith(".TXT")){
+        if(!(result.assets[0].name).toLowerCase()?.endsWith(".txt")){
           alert('Vueillez selectionner un fichier texte (.txt) !');
           setSelectedFileName("");
 
@@ -61,7 +64,7 @@ export default function Index() {
 
   const goToEditscreen = () => {
     let data = selectedFileData?.split(/\r?\n/);
-    router.push(`/details?fileData=${data}&fileUri=${selectedFileUri}`);
+    router.push(`/details?fileData=${data}&fileUri=${selectedFileUri}&fileName=${selectedFileName}`);
   }
 
   return (

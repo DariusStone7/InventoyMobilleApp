@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/logoSansFond.png",
       "resizeMode": "contain",
-      "backgroundColor": "#fff"  
+      "backgroundColor": "#fff"
     },
     "ios": {
       "supportsTablet": true
@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dariusstone7.InventoryApp"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +32,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "726d7bd4-0638-4945-b0f2-9ea48598b369"
+      }
     }
   }
 }

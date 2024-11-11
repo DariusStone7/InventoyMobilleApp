@@ -7,10 +7,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import RNFS from 'react-native-fs';
 
 export default function DetailsScreen(){
 
-    const { fileData, fileUri } = useLocalSearchParams();
+    const { fileData, fileUri, fileName } = useLocalSearchParams();
     let [products, setProducts] = useState<Product[]>([]);
     let [initialProducts, setInitialProducts] = useState<Product[]>([]);
     let [refreshing, setRefreshing] = useState<boolean>(false);
@@ -143,14 +144,25 @@ export default function DetailsScreen(){
             data += product.getId() + ";" + product.getName() + product.getCondtionment() + ";" + product.getQuantity() + "\r\n";
         });
         FileSystem.writeAsStringAsync((fileUri).toString(), data)
-            .then(response => alert("success"))
-            .catch(e => alert("error"));
+            .then(response => console.log("success"))
+            .catch(e => alert("Erreur lors de l'enregistrement !"));
 
-        await Sharing.shareAsync((fileUri).toString());
+        const newFileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+        await FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
+
+        await Sharing.shareAsync((newFileUri).toString())
+            .then(response => console.log(response))
+            .catch(error => console.error(error));
+
+        // let info = FileSystem.writeAsStringAsync('file:///data/user/0/Download', data);
 
         console.log(data);
-        console.log(fileUri);
+        console.log(`${FileSystem.documentDirectory}${fileName}`);
+        // console.log('aaaaaaaaaaaaaaaa',info);
 
+        // const path = `${RNFS.DownloadDirectoryPath}${fileName}`;
+        // await RNFS.writeFile('file:///data/user/0/Dowloads', data, 'utf8');
     }
 
     //Vue à afficher à l'écran
@@ -196,7 +208,7 @@ export default function DetailsScreen(){
             </FlatList>
 
             <Modal transparent={ true } animationType="slide" visible={ modalVisible } onPointerLeave={ () => setModalVisible(false) }>
-                {/* <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} }> */}
+                <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} } behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                     <TouchableOpacity onPress={ closeModal } style={ styles.modalOverlay } activeOpacity={ 1 }>
                         <TouchableOpacity style={ styles.modal } activeOpacity={ 1 }>
                             <Ionicons name="checkmark-circle-outline" size={ 48 } color="#02c4ba" onPress={ closeModal } style={ styles.closeButton }></Ionicons>
@@ -206,7 +218,7 @@ export default function DetailsScreen(){
                             <TextInput onBlur={ closeModal } placeholder="Quantité" value={ (selectedPoduct?.getQuantity())?.toString() } onChangeText={ (text) => {updateQuantity(text)} } selectTextOnFocus keyboardType="numeric" style={ styles.input } />
                         </TouchableOpacity>
                     </TouchableOpacity>
-                {/* </KeyboardAvoidingView> */}
+                </KeyboardAvoidingView>
             </Modal>
 
         </View>
@@ -241,7 +253,7 @@ const styles = StyleSheet.create({
     modal:{
        backgroundColor: "#dfeaee",
        width: "100%",
-       height: "35%",
+       height: "45%",
        position: "absolute",
        bottom: 0,
        borderTopRightRadius: 25,
