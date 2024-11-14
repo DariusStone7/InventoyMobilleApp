@@ -43,10 +43,6 @@ export default function Index() {
         
         let fileData = await FileSystem.readAsStringAsync(result.assets[0].uri, {encoding: FileSystem.EncodingType.UTF8});
         setSelectedFileData(fileData);
-        // console.log(fileData.split(/\r?\n/));
-  
-        // console.log(selectedFileUri);
-        // console.log(selectedFileName);
       }
       else{
         alert("Vous n'avez selectionné aucun fichier");
@@ -55,8 +51,7 @@ export default function Index() {
       setSelectedFileData("");
       setSelectedFileName("");
       setSelectedFileUri("");
-      alert("Une erreur est survenue !");
-      console.log(e);
+      alert("Une erreur est survenue: " + e);
     }
     
 

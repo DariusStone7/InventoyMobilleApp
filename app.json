@@ -4,7 +4,7 @@
     "slug": "InventoryApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logoSansFond.png",
+    "icon": "./assets/images/logoIcon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logoSansFond.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dariusstone7.InventoryApp"
@@ -25,7 +25,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logoSansFond.png"
     },
     "plugins": [
       "expo-router"

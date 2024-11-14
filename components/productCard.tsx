@@ -38,8 +38,8 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
     cdt:{
-        fontSize: 11,
-        color: "#0000009b",
+        fontSize: 14,
+        color: "#00000090",
     },
     quantity:{
         // fontWeight: "bold",

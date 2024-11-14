@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, StyleSheet, FlatList, Pressable, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform, Button} from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform, } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
 import Product from "@/models/Product";
@@ -7,36 +7,36 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import RNFS from 'react-native-fs';
+import { TextInput, ActivityIndicator } from 'react-native-paper';
 
 export default function DetailsScreen(){
 
     const { fileData, fileUri, fileName } = useLocalSearchParams();
     let [products, setProducts] = useState<Product[]>([]);
-    let [initialProducts, setInitialProducts] = useState<Product[]>([]);
+    let [currentProducts, setcurrentProducts] = useState<Product[]>([]);
     let [refreshing, setRefreshing] = useState<boolean>(false);
     let [searchText, setSearchText] = useState<string>();
     let [modalVisible, setModalVisible] = useState<boolean>(false);
     let [selectedPoduct, setSelectedProduct] = useState<Product>();
     let [selectedIndex, setSelectedIndex] = useState<Number>();
-
+    let [searching, setSearching] = useState<boolean>(false);
 
     //initialisation de la liste de produits lorsque le composant est monté
     useEffect( () => {
 
         let productsList = initProducts(fileData);
-        setInitialProducts(productsList);
+        setcurrentProducts(productsList);
         setProducts(productsList);
 
     }, []);
 
 
-    //Rechargement de la liste des produits lorsqu'on recharge l'écran
+    //Rechargement de la liste des produits lorsqu'on actualise l'écran
     const onRefresh = () => {
 
         setRefreshing(true);
-        setInitialProducts(products);
-        setTimeout(()=>{setRefreshing(false)}, 500);
+        setcurrentProducts(products);
+        setTimeout(() => { setRefreshing(false) }, 500);
 
     }
 
@@ -46,21 +46,20 @@ export default function DetailsScreen(){
 
         data = (fileData.toString()).split(',');
         data = data.filter( item => item !== "" );
-        // console.log(data);
             
         let products = [] as Product[];
 
-        data.forEach( (line, index) => {
+        data.forEach( (line) => {
 
             let lineSplit = line.split(";");
             let name = lineSplit[1].slice(0, lineSplit[1].indexOf('(') -1);
             let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
+
             let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
     
             products.push(product);
 
         });
-        console.log(products);
 
         return products;
 
@@ -69,39 +68,51 @@ export default function DetailsScreen(){
 
     //Filtre de la liste des produits en fonction de la valeur de recherche saisie
     const filterProducts = (key:string) => {
-     
+        
+        // setSearching(false)
+
+        //Afficher toute la liste s'il y'a aucun texte à rechercher
         if(key.length === 0){
-            setInitialProducts(products);
+            setcurrentProducts(products);
+            setSearching(false);
+
             return;
         }
 
-        let result = initialProducts.filter( (product) => {
+        //filtrer la liste des produits en fonction du texte à rechercher
+        let result = currentProducts.filter( (product) => {
             return (product.getName()).includes(key.toUpperCase());
         });
-       
-        setInitialProducts(result);
+        //Afficher la liste des produits trouvés
+        setcurrentProducts(result);
+
+        // setSearching(true);
+        
     }
 
 
     //Mis à jour de la quantité du produit selectionné avec la nouvelle valeur saisir
     const updateQuantity = (quantity: string) => {
 
-        if(quantity.includes('.')){
-            setTimeout(()=>1, 1000);
-        }
+        // if(quantity.includes('.')){
+        //     setTimeout(()=>1, 1000);
+        // }
+        
         let product = new Product(selectedPoduct?.getId(), selectedPoduct?.getName(), selectedPoduct?.getCondtionment(), selectedPoduct?.getQuantity());
 
         product?.setQuantity(Number(quantity));
 
         setSelectedProduct(product);
 
-        initialProducts.forEach((product) => {
+        //mise à jour de la quantité dans la liste courante
+        currentProducts.forEach((product) => {
             if( product.getId() == selectedPoduct?.getId()){
                 product.setQuantity(Number(quantity));
                 return;
             }
         });
 
+        //mise à jour de la quantité dans toute la liste
         products.forEach((product, index) => {
             if( product.getId() == selectedPoduct?.getId()){
                 product.setQuantity(Number(quantity));
@@ -110,10 +121,6 @@ export default function DetailsScreen(){
             }
         });
         
-        // initialProducts[Number(selectedIndex)]?.setQuantity(Number(quantity));
-        
-        // products[Number(selectedIndex)]?.setQuantity(Number(quantity));
-        // setInitialProducts(products);
         setProducts(products);
 
     }
@@ -138,31 +145,50 @@ export default function DetailsScreen(){
 
     }
 
+
     const saveInventoryToFile = async() => {
+        
         let data = "";
+
+        //Reconstitution du contenu du fichier
         products.forEach( (product) => {
             data += product.getId() + ";" + product.getName() + product.getCondtionment() + ";" + product.getQuantity() + "\r\n";
         });
-        FileSystem.writeAsStringAsync((fileUri).toString(), data)
-            .then(response => console.log("success"))
-            .catch(e => alert("Erreur lors de l'enregistrement !"));
+
+        //Demande de permission d'accès au stockage
+        const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+        if(permission.granted){
+
+            //Création et enregistrement du nouveau fichier
+            await FileSystem.StorageAccessFramework.createFileAsync(permission.directoryUri, fileName.toString(), "text/plain")
+                .then( async (uri) => {
+                    FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.UTF8 })
+                    .then(r => alert("Fichier enregistré avec succès !"))
+                    .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
+
+                })
+                .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
+        }
+
+    }
+
+
+    //Partager le fichier
+    const shareFile = async () => {
 
         const newFileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-        await FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
-
-        await Sharing.shareAsync((newFileUri).toString())
+        FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
+        
+        await Sharing.shareAsync(newFileUri)
             .then(response => console.log(response))
             .catch(error => console.error(error));
 
-        // let info = FileSystem.writeAsStringAsync('file:///data/user/0/Download', data);
+    }
 
-        console.log(data);
-        console.log(`${FileSystem.documentDirectory}${fileName}`);
-        // console.log('aaaaaaaaaaaaaaaa',info);
-
-        // const path = `${RNFS.DownloadDirectoryPath}${fileName}`;
-        // await RNFS.writeFile('file:///data/user/0/Dowloads', data, 'utf8');
+    const animate = () => {
+        setSearching(false);
     }
 
     //Vue à afficher à l'écran
@@ -172,7 +198,11 @@ export default function DetailsScreen(){
 
             <Stack.Screen 
                 options={{
-                    headerRight: () => <Text onPress={saveInventoryToFile} style={styles.saveButton}> Enregistrer </Text> 
+                    headerRight: () => 
+                    <View style={styles.buttons}>
+                         <Ionicons name="save-outline" color="#fff" size={20} onPress={saveInventoryToFile}></Ionicons>
+                         <Ionicons name="share-social-outline" color="#fff" size={20} onPress={shareFile}></Ionicons> 
+                    </View> 
                 }}
              />
 
@@ -186,12 +216,25 @@ export default function DetailsScreen(){
                         filterProducts(key);
                     }
                 }
+                onEndEditing={animate}
+                
                 style={styles.seachInput}
-            > 
-            </TextInput>
+                right= {
+                        <TextInput.Icon  icon={"microphone"} /> 
+                }
+                left= {
+                    <TextInput.Icon  icon={searching ? "" : "magnify"} /> 
+                }
+                cursorColor="#000"
+                selectionColor="#000"
+                mode="outlined"
+                outlineStyle={{borderColor:"#fff"}}
+                contentStyle={{paddingLeft: 0}}
+            /> 
+             <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
 
             <FlatList
-                data={initialProducts} 
+                data={currentProducts} 
                 renderItem={ 
                     ({item, index}) => <Text onPress={()=>{openModal(item, index)}} style={styles.productCard}> <ProductComponent product={item}/> </Text>
                 }
@@ -201,11 +244,10 @@ export default function DetailsScreen(){
                 onRefresh={onRefresh}
                 style={styles.flatlist}
                 showsVerticalScrollIndicator={ false } 
-                ListFooterComponent={ () => <Text> Nombre de Produits: { initialProducts.length } / { products.length } </Text> }
+                ListFooterComponent={ () => <Text> Nombre de Produits: { currentProducts.length } / { products.length } </Text> }
                 ListEmptyComponent={ () => <Text style={ {color: "#ff9900"} }> Aucun produit trouvé ! </Text> }
                 
-            >
-            </FlatList>
+            />
 
             <Modal transparent={ true } animationType="slide" visible={ modalVisible } onPointerLeave={ () => setModalVisible(false) }>
                 <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} } behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -243,6 +285,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         borderRadius: 10,
         marginBottom: 20,
+        
     },
     productCard:{
         // backgroundColor: "#d7eef0",
@@ -279,9 +322,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginTop: 4,
     },
-    saveButton:{
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
+    buttons:{
+        display: "flex",
+        flexDirection: "row",
+        gap: 15,
     }
 })
