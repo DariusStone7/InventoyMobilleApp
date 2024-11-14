@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform, } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Modal, KeyboardAvoidingView, Platform, PermissionsAndroid, } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
 import Product from "@/models/Product";
@@ -156,7 +156,9 @@ export default function DetailsScreen(){
         });
 
         //Demande de permission d'accès au stockage
+        // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        const docDir = FileSystem.documentDirectory as string;
 
         if(permission.granted){
 
@@ -209,6 +211,7 @@ export default function DetailsScreen(){
             <TextInput 
                 value={searchText}
                 placeholder="Rechercher"
+                placeholderTextColor={"#00000061"}
                 selectTextOnFocus
                 onChangeText={
                     (key) => {
@@ -216,22 +219,22 @@ export default function DetailsScreen(){
                         filterProducts(key);
                     }
                 }
-                onEndEditing={animate}
+                // onEndEditing={animate}
                 
-                style={styles.seachInput}
-                right= {
-                        <TextInput.Icon  icon={"microphone"} /> 
+                style = { styles.seachInput }
+                right = {
+                    <TextInput.Icon  icon={"microphone"} color={"#00000061"}/> 
                 }
-                left= {
-                    <TextInput.Icon  icon={searching ? "" : "magnify"} /> 
+                left = {
+                    <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"}/> 
                 }
                 cursorColor="#000"
-                selectionColor="#000"
+                selectionColor="#bb661639"
                 mode="outlined"
-                outlineStyle={{borderColor:"#fff"}}
-                contentStyle={{paddingLeft: 0}}
+                outlineStyle={{borderColor:"#fff", borderRadius: 20}}
+                contentStyle={{paddingLeft: 0, margin:0}}
             /> 
-             <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
+            <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
 
             <FlatList
                 data={currentProducts} 
@@ -250,14 +253,26 @@ export default function DetailsScreen(){
             />
 
             <Modal transparent={ true } animationType="slide" visible={ modalVisible } onPointerLeave={ () => setModalVisible(false) }>
-                <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} } behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <KeyboardAvoidingView style={ {flex:1, justifyContent:"flex-end"} } behavior={Platform.OS === 'ios' ? 'padding' : undefined} >
                     <TouchableOpacity onPress={ closeModal } style={ styles.modalOverlay } activeOpacity={ 1 }>
                         <TouchableOpacity style={ styles.modal } activeOpacity={ 1 }>
-                            <Ionicons name="checkmark-circle-outline" size={ 48 } color="#02c4ba" onPress={ closeModal } style={ styles.closeButton }></Ionicons>
-                            <Text style={ {fontSize:20, color: "#0000009b", fontWeight: "bold"} }> { selectedPoduct?.getName() } </Text>
-                            <Text style={ {fontSize:14, color: "#0000009b",} }> { selectedPoduct?.getCondtionment() } </Text>
-                            <Text style={ {fontSize:14, color: "#0000009b", marginTop: 20,} }> Quantité: </Text>
-                            <TextInput onBlur={ closeModal } placeholder="Quantité" value={ (selectedPoduct?.getQuantity())?.toString() } onChangeText={ (text) => {updateQuantity(text)} } selectTextOnFocus keyboardType="numeric" style={ styles.input } />
+                            <Ionicons name="checkmark-circle-outline" size={ 42 } color="#02c4ba" onPress={ closeModal } style={ styles.closeButton }></Ionicons>
+                            <Text style={ {fontSize:20, color: "#0000009b", fontWeight: "bold", textAlign: "left", } }>{ selectedPoduct?.getName() } </Text>
+                            <Text style={ {fontSize:16, color: "#0000009b",} }>{ selectedPoduct?.getCondtionment() } </Text>
+                            <Text style={ {fontSize:16, color: "#0000009b", marginTop: 20,} }>Quantité: </Text>
+                            <TextInput 
+                                onBlur={ closeModal } 
+                                placeholder="Quantité" 
+                                value={ (selectedPoduct?.getQuantity())?.toString() } 
+                                onChangeText={ (text) => {updateQuantity(text)} } 
+                                selectTextOnFocus keyboardType="numeric" 
+                                style={ styles.input } 
+                                cursorColor="#000"
+                                selectionColor="#bb661639"
+                                mode="outlined"
+                                outlineStyle={{borderColor:"#fff", }}
+                                contentStyle={{paddingLeft: 0, margin:0}}
+                            />
                         </TouchableOpacity>
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
@@ -283,7 +298,7 @@ const styles = StyleSheet.create({
         height: 40,
         width: "100%",
         paddingHorizontal: 10,
-        borderRadius: 10,
+        borderRadius: 20,
         marginBottom: 20,
         
     },
