@@ -28,6 +28,8 @@ export default function DetailsScreen(){
         setcurrentProducts(productsList);
         setProducts(productsList);
 
+        console.log("aaaaaaaaaaaaaaaaaaaaaaa", fileUri);
+
     }, []);
 
 
@@ -52,7 +54,7 @@ export default function DetailsScreen(){
         data.forEach( (line) => {
 
             let lineSplit = line.split(";");
-            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('(') -1);
+            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('('));
             let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
 
             let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
@@ -70,6 +72,7 @@ export default function DetailsScreen(){
     const filterProducts = (key:string) => {
         
         // setSearching(false)
+        setcurrentProducts(products);
 
         //Afficher toute la liste s'il y'a aucun texte à rechercher
         if(key.length === 0){
@@ -93,10 +96,6 @@ export default function DetailsScreen(){
 
     //Mis à jour de la quantité du produit selectionné avec la nouvelle valeur saisir
     const updateQuantity = (quantity: string) => {
-
-        // if(quantity.includes('.')){
-        //     setTimeout(()=>1, 1000);
-        // }
         
         let product = new Product(selectedPoduct?.getId(), selectedPoduct?.getName(), selectedPoduct?.getCondtionment(), selectedPoduct?.getQuantity());
 
@@ -139,15 +138,15 @@ export default function DetailsScreen(){
 
     //Traitement lors de la cloture du modal
     const closeModal = () => {
-
+        
         setModalVisible(false);
         console.log('Produit mis à jour: ', products[Number(selectedIndex)]);
 
     }
 
 
-    const saveInventoryToFile = async() => {
-        
+    const formatFile = () => {
+
         let data = "";
 
         //Reconstitution du contenu du fichier
@@ -155,23 +154,35 @@ export default function DetailsScreen(){
             data += product.getId() + ";" + product.getName() + product.getCondtionment() + ";" + product.getQuantity() + "\r\n";
         });
 
+        return data;
+    }
+
+
+    const saveInventoryToFile = async() => {
+        
+        let data = formatFile();
+
         //Demande de permission d'accès au stockage
         // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
         const docDir = FileSystem.documentDirectory as string;
 
-        if(permission.granted){
+        FileSystem.writeAsStringAsync(fileUri.toString(), data, { encoding: FileSystem.EncodingType.UTF8 })
+            .then(() => alert('save '))
+            .catch((e) => console.log('Error', e));
 
-            //Création et enregistrement du nouveau fichier
-            await FileSystem.StorageAccessFramework.createFileAsync(permission.directoryUri, fileName.toString(), "text/plain")
-                .then( async (uri) => {
-                    FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.UTF8 })
-                    .then(r => alert("Fichier enregistré avec succès !"))
-                    .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
+        // if(permission.granted){
 
-                })
-                .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
-        }
+        //     //Création et enregistrement du nouveau fichier
+        //     await FileSystem.StorageAccessFramework.createFileAsync(permission.directoryUri, fileName.toString(), "text/plain")
+        //         .then( async (uri) => {
+        //             FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.UTF8 })
+        //             .then(r => alert("Fichier enregistré avec succès !"))
+        //             .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
+
+        //         })
+        //         .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
+        // }
 
     }
 
@@ -179,15 +190,18 @@ export default function DetailsScreen(){
     //Partager le fichier
     const shareFile = async () => {
 
+        let data = formatFile();
         const newFileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-        FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
-        
+        // FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
+        FileSystem.writeAsStringAsync(newFileUri, data);
+
         await Sharing.shareAsync(newFileUri)
             .then(response => console.log(response))
             .catch(error => console.error(error));
 
     }
+
 
     const animate = () => {
         setSearching(false);
@@ -207,7 +221,10 @@ export default function DetailsScreen(){
                     </View> 
                 }}
              />
-
+            <View style={styles.buttons}>
+                         <Ionicons name="save-outline" color="#000" size={20} onPress={saveInventoryToFile}></Ionicons>
+                         <Ionicons name="share-social-outline" color="#000" size={20} onPress={shareFile}></Ionicons> 
+            </View> 
             <TextInput 
                 value={searchText}
                 placeholder="Rechercher"
@@ -223,18 +240,18 @@ export default function DetailsScreen(){
                 
                 style = { styles.seachInput }
                 right = {
-                    <TextInput.Icon  icon={"microphone"} color={"#00000061"}/> 
+                    <TextInput.Icon  icon={"microphone"} color={"#00000061"} /> 
                 }
                 left = {
-                    <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"}/> 
+                    <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"} /> 
                 }
-                cursorColor="#000"
+                cursorColor="#00000061"
                 selectionColor="#bb661639"
                 mode="outlined"
                 outlineStyle={{borderColor:"#fff", borderRadius: 20}}
-                contentStyle={{paddingLeft: 0, margin:0}}
+                contentStyle={{paddingLeft: 0, margin:0, color: "#0000009b"}}
             /> 
-            <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
+            <ActivityIndicator style={ searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"} } animating={searching} color="#000000b9" size={22} />
 
             <FlatList
                 data={currentProducts} 
