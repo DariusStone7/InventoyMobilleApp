@@ -11,7 +11,7 @@ export default function Index() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  const [selectedFileUri, setSelectedFileUri] = useState<string>(String);
+  const [selectedFileUri, setSelectedFileUri] = useState<string>();
   const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
   const [selectedFileData, setSelectedFileData] = useState<string | undefined>();
 
@@ -24,11 +24,16 @@ export default function Index() {
     try{
       let result = await DocumentPicker.getDocumentAsync({
         type: "text/plain",
+        copyToCacheDirectory: false,
       });
   
       if(!result.canceled){
         
         console.log(result);
+
+        FileSystem.copyAsync({from: result.assets[0].uri , to: FileSystem.documentDirectory + result.assets[0].name})
+          .then(() => console.log('Copy to cache success'))
+          .catch((e)=>console.log("Error: ", e));
 
         setSelectedFileName(result.assets[0].name);
 
@@ -41,7 +46,7 @@ export default function Index() {
 
         setSelectedFileUri(result.assets[0].uri);
         
-        let fileData = await FileSystem.readAsStringAsync(result.assets[0].uri, {encoding: FileSystem.EncodingType.UTF8});
+        let fileData = await FileSystem.readAsStringAsync(FileSystem.documentDirectory + result.assets[0].name, {encoding: FileSystem.EncodingType.UTF8});
         setSelectedFileData(fileData);
       }
       else{

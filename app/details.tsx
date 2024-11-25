@@ -28,6 +28,8 @@ export default function DetailsScreen(){
         setcurrentProducts(productsList);
         setProducts(productsList);
 
+        console.log("aaaaaaaaaaaaaaaaaaaaaaa", fileUri);
+
     }, []);
 
 
@@ -70,6 +72,7 @@ export default function DetailsScreen(){
     const filterProducts = (key:string) => {
         
         // setSearching(false)
+        setcurrentProducts(products);
 
         //Afficher toute la liste s'il y'a aucun texte à rechercher
         if(key.length === 0){
@@ -93,10 +96,6 @@ export default function DetailsScreen(){
 
     //Mis à jour de la quantité du produit selectionné avec la nouvelle valeur saisir
     const updateQuantity = (quantity: string) => {
-
-        // if(quantity.includes('.')){
-        //     setTimeout(()=>1, 1000);
-        // }
         
         let product = new Product(selectedPoduct?.getId(), selectedPoduct?.getName(), selectedPoduct?.getCondtionment(), selectedPoduct?.getQuantity());
 
@@ -139,7 +138,7 @@ export default function DetailsScreen(){
 
     //Traitement lors de la cloture du modal
     const closeModal = () => {
-
+        
         setModalVisible(false);
         console.log('Produit mis à jour: ', products[Number(selectedIndex)]);
 
@@ -168,6 +167,10 @@ export default function DetailsScreen(){
         // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
 
+        FileSystem.writeAsStringAsync(fileUri.toString(), data, { encoding: FileSystem.EncodingType.UTF8 })
+            .then(() => alert('save '))
+            .catch((e) => console.log('Error', e));
+
         if(permission.granted){
 
             //Création et enregistrement du nouveau fichier
@@ -177,8 +180,8 @@ export default function DetailsScreen(){
                     .then(r => setSaveModal(true))
                     .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
 
-                })
-                .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
+                 })
+                 .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
         }
 
     }
@@ -235,10 +238,10 @@ export default function DetailsScreen(){
                 
                 style = { styles.seachInput }
                 right = {
-                    <TextInput.Icon  icon={"microphone"} color={"#00000061"}/> 
+                    <TextInput.Icon  icon={"microphone"} color={"#00000061"} /> 
                 }
                 left = {
-                    <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"}/> 
+                    <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"} /> 
                 }
                 cursorColor="#0000009b"
                 selectionColor="#bb661639"
@@ -246,7 +249,7 @@ export default function DetailsScreen(){
                 outlineStyle={{borderColor:"#fff", borderRadius: 20}}
                 contentStyle={{paddingLeft: 0, margin:0, color: "#0000009b", fontWeight:"600"}}
             /> 
-            <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
+            <ActivityIndicator style={ searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"} } animating={searching} color="#000000b9" size={22} />
 
             <FlatList
                 data={currentProducts} 
