@@ -71,13 +71,13 @@ export default function Index() {
       </View>
       { selectedFileName ? (
         <View style={{width:"100%"}}>
-        <View style={{display:"flex", flexDirection:"row", justifyContent:"space-between", alignItems:"baseline", backgroundColor: "#ffffff", padding:10}}>
-          <Text style={styles.text}>Contenu du fichier: </Text>
-          <Button label="Editer" icon="pencil-sharp" onPress={goToEditscreen} type="outline"/>
-        </View>
-        <ScrollView style={styles.content} >
-          <Text>{selectedFileData}</Text>
-        </ScrollView>
+          <View style={{display:"flex", flexDirection:"row", justifyContent:"space-between", alignItems:"baseline", backgroundColor: "#ffffff", padding:10}}>
+            <Text style={styles.text}>{(selectedFileName).length < 16 ? (selectedFileName) : (selectedFileName).slice(0, 16) + "..."}</Text>
+            <Button label="Editer" icon="pencil-sharp" onPress={goToEditscreen} type="outline"/>
+          </View>
+          <ScrollView style={styles.content} >
+            <Text>{selectedFileData}</Text>
+          </ScrollView>
         </View>
       ) : (
         <View></View>
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   },
   text:{
     marginTop: 10,
+    fontSize: 18,
   },
   content:{
     borderTopWidth: 0.5,

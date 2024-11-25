@@ -20,7 +20,7 @@ export default function DetailsScreen(){
     let [selectedPoduct, setSelectedProduct] = useState<Product>();
     let [selectedIndex, setSelectedIndex] = useState<Number>();
     let [searching, setSearching] = useState<boolean>(false);
-
+    let [saveModal, setSaveModal] = useState<boolean>(false);
     //initialisation de la liste de produits lorsque le composant est monté
     useEffect( () => {
 
@@ -52,7 +52,7 @@ export default function DetailsScreen(){
         data.forEach( (line) => {
 
             let lineSplit = line.split(";");
-            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('(') -1);
+            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('('));
             let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
 
             let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
@@ -146,8 +146,8 @@ export default function DetailsScreen(){
     }
 
 
-    const saveInventoryToFile = async() => {
-        
+    const formatFileData = ()=>{
+ 
         let data = "";
 
         //Reconstitution du contenu du fichier
@@ -155,10 +155,18 @@ export default function DetailsScreen(){
             data += product.getId() + ";" + product.getName() + product.getCondtionment() + ";" + product.getQuantity() + "\r\n";
         });
 
+        return data;
+
+    }
+
+
+    const saveInventoryToFile = async() => {
+        
+        let data = formatFileData();
+
         //Demande de permission d'accès au stockage
         // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        const docDir = FileSystem.documentDirectory as string;
 
         if(permission.granted){
 
@@ -166,7 +174,7 @@ export default function DetailsScreen(){
             await FileSystem.StorageAccessFramework.createFileAsync(permission.directoryUri, fileName.toString(), "text/plain")
                 .then( async (uri) => {
                     FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.UTF8 })
-                    .then(r => alert("Fichier enregistré avec succès !"))
+                    .then(r => setSaveModal(true))
                     .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
 
                 })
@@ -180,8 +188,10 @@ export default function DetailsScreen(){
     const shareFile = async () => {
 
         const newFileUri = `${FileSystem.documentDirectory}${fileName}`;
+        let data = formatFileData();
 
-        FileSystem.copyAsync({from: fileUri.toString(), to: newFileUri});
+        FileSystem.writeAsStringAsync(newFileUri, data, { encoding: FileSystem.EncodingType.UTF8 })
+            .catch(e => alert("Une erreur est survenue lors du partage du fichier: " + e));
         
         await Sharing.shareAsync(newFileUri)
             .then(response => console.log(response))
@@ -189,9 +199,11 @@ export default function DetailsScreen(){
 
     }
 
+
     const animate = () => {
         setSearching(false);
     }
+
 
     //Vue à afficher à l'écran
     return (
@@ -207,10 +219,10 @@ export default function DetailsScreen(){
                     </View> 
                 }}
              />
-
+    
             <TextInput 
                 value={searchText}
-                placeholder="Rechercher"
+                placeholder="Rechercher..."
                 placeholderTextColor={"#00000061"}
                 selectTextOnFocus
                 onChangeText={
@@ -228,11 +240,11 @@ export default function DetailsScreen(){
                 left = {
                     <TextInput.Icon  icon={searching ? "" : "magnify"} color={"#00000061"}/> 
                 }
-                cursorColor="#000"
+                cursorColor="#0000009b"
                 selectionColor="#bb661639"
                 mode="outlined"
                 outlineStyle={{borderColor:"#fff", borderRadius: 20}}
-                contentStyle={{paddingLeft: 0, margin:0}}
+                contentStyle={{paddingLeft: 0, margin:0, color: "#0000009b", fontWeight:"600"}}
             /> 
             <ActivityIndicator style={searching ? {position:'absolute', left: 0, margin: 28, borderColor: "#000000b9"} : {display:"none"}} animating={searching} color="#000000b9" size={22} />
 
@@ -278,6 +290,18 @@ export default function DetailsScreen(){
                 </KeyboardAvoidingView>
             </Modal>
 
+            <Modal style={styles.saveModal} visible={saveModal} transparent={ true }>
+                <TouchableOpacity onPress={ () => setSaveModal(false) } style={{flex:1, justifyContent:"center", backgroundColor: 'rgba(0, 0, 0, 0.3)', alignItems:"center"}} activeOpacity={ 1 }>
+                    <TouchableOpacity style={ styles.saveModal } activeOpacity={ 1 }>
+                        <View>
+                            <Text style={{fontSize: 18, fontWeight: "300"}}>Fichier enregistré avec succès !</Text>
+
+                            <Text onPress={ () => setSaveModal(false) } style={{fontSize: 18, fontWeight: "400", textAlign: "right", position:"absolute", bottom:-50, right:0}}>OK</Text>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
+
         </View>
 
     )
@@ -319,10 +343,18 @@ const styles = StyleSheet.create({
        paddingHorizontal: 20,
        paddingVertical: 50,
     },
+    saveModal:{
+       backgroundColor: "#dfeaee",
+       width: "80%",
+       height: 150,
+       borderRadius: 15,
+       justifyContent: "center",
+       alignItems:"center",
+    },
     modalOverlay:{
         flex: 1,
         justifyContent: "flex-end",
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
     closeButton:{
         position: "absolute",
