@@ -28,8 +28,6 @@ export default function DetailsScreen(){
         setcurrentProducts(productsList);
         setProducts(productsList);
 
-        console.log("aaaaaaaaaaaaaaaaaaaaaaa", fileUri);
-
     }, []);
 
 
@@ -72,13 +70,12 @@ export default function DetailsScreen(){
     const filterProducts = (key:string) => {
         
         // setSearching(false)
-        setcurrentProducts(products);
+        currentProducts = products;
+        setcurrentProducts(currentProducts);
 
         //Afficher toute la liste s'il y'a aucun texte à rechercher
         if(key.length === 0){
             setcurrentProducts(products);
-            setSearching(false);
-
             return;
         }
 
@@ -86,6 +83,7 @@ export default function DetailsScreen(){
         let result = currentProducts.filter( (product) => {
             return (product.getName()).includes(key.toUpperCase());
         });
+
         //Afficher la liste des produits trouvés
         setcurrentProducts(result);
 
@@ -166,10 +164,6 @@ export default function DetailsScreen(){
         //Demande de permission d'accès au stockage
         // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-        FileSystem.writeAsStringAsync(fileUri.toString(), data, { encoding: FileSystem.EncodingType.UTF8 })
-            .then(() => alert('save '))
-            .catch((e) => console.log('Error', e));
 
         if(permission.granted){
 
@@ -293,7 +287,7 @@ export default function DetailsScreen(){
                 </KeyboardAvoidingView>
             </Modal>
 
-            <Modal style={styles.saveModal} visible={saveModal} transparent={ true }>
+            <Modal style={styles.saveModal} animationType="fade" visible={saveModal} transparent={ true }>
                 <TouchableOpacity onPress={ () => setSaveModal(false) } style={{flex:1, justifyContent:"center", backgroundColor: 'rgba(0, 0, 0, 0.3)', alignItems:"center"}} activeOpacity={ 1 }>
                     <TouchableOpacity style={ styles.saveModal } activeOpacity={ 1 }>
                         <View>
