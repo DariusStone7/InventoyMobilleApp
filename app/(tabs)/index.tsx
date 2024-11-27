@@ -5,6 +5,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from "react";
 import * as FileSystem from 'expo-file-system';
 import { useRouter, Link, useNavigation } from "expo-router";
+import ModalInfo from "@/components/modal";
+
 
 export default function Index() {
 
@@ -14,6 +16,10 @@ export default function Index() {
   const [selectedFileUri, setSelectedFileUri] = useState<string>();
   const [selectedFileName, setSelectedFileName] = useState<string | undefined>();
   const [selectedFileData, setSelectedFileData] = useState<string | undefined>();
+  let [fileErrorModalIsVisible, setFileErrorModalIsVisible] = useState<boolean>(false);
+  let [notFileModalIsVisible, setNotFileModalIsVisible] = useState<boolean>(false);
+  let [errorModal, setErrorModal] = useState<boolean>(false);
+  let [error, setError] = useState<any>();
 
   const documentPicker = async()=>{
 
@@ -34,7 +40,8 @@ export default function Index() {
         setSelectedFileName(result.assets[0].name);
 
         if(!(result.assets[0].name).toLowerCase()?.endsWith(".txt")){
-          alert('Vueillez selectionner un fichier texte (.txt) !');
+
+          setFileErrorModalIsVisible(true);
           setSelectedFileName("");
 
           return;
@@ -46,22 +53,37 @@ export default function Index() {
         setSelectedFileData(fileData);
       }
       else{
-        alert("Vous n'avez selectionné aucun fichier");
+        setNotFileModalIsVisible(true)
       }
     }catch(e){
       setSelectedFileData("");
       setSelectedFileName("");
       setSelectedFileUri("");
-      alert("Une erreur est survenue: " + e);
+      setErrorModal(true);
+      setError("Une erreur est survenue: " + e);
     }
     
 
   }
 
+
   const goToEditscreen = () => {
+
     let data = selectedFileData?.split(/\r?\n/);
     router.push(`/details?fileData=${data}&fileUri=${selectedFileUri}&fileName=${selectedFileName}`);
+
   }
+
+
+  //fermeture du modal
+  const closeModal = () => {
+      
+    setFileErrorModalIsVisible(false);
+    setNotFileModalIsVisible(false);
+    setErrorModal(false);
+
+  }
+
 
   return (
     <View style={styles.container}>
@@ -83,6 +105,10 @@ export default function Index() {
       ) : (
         <View></View>
       )}
+
+      <ModalInfo icon={"warning"} iconColor="#ff9900" isVisible={fileErrorModalIsVisible} message="Vueillez selectionner un fichier texte (.txt) !" buttonText="OK" onClose={closeModal}/>
+      <ModalInfo icon={"warning"} iconColor="#ff9900" isVisible={notFileModalIsVisible} message="Vous n'avez selectionné aucun fichier !" buttonText="Réessayer" onClose={closeModal}/>
+      <ModalInfo icon={"error"} iconColor="#ff9900" isVisible={errorModal} message={error} buttonText="Réessayer" onClose={closeModal}/>
     </View>
   );
 }

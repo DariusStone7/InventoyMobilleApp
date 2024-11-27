@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { TextInput, ActivityIndicator } from 'react-native-paper';
+import ModalInfo from "@/components/modal";
 
 export default function DetailsScreen(){
 
@@ -21,10 +22,16 @@ export default function DetailsScreen(){
     let [selectedIndex, setSelectedIndex] = useState<Number>();
     let [searching, setSearching] = useState<boolean>(false);
     let [saveModal, setSaveModal] = useState<boolean>(false);
+    let [saveErrorModal, setSaveErrorModal] = useState<boolean>(false);
+    let [formatErrorModal, setFormatErrorModal] = useState<boolean>(false);
+    let [error, setError] = useState<any>();
+
+
     //initialisation de la liste de produits lorsque le composant est monté
     useEffect( () => {
 
         let productsList = initProducts(fileData);
+
         setcurrentProducts(productsList);
         setProducts(productsList);
 
@@ -43,23 +50,33 @@ export default function DetailsScreen(){
 
     //Formatage du contenu du fichier en un tableau de produit
     const initProducts = (data : string | string[]) => {
+        try{
 
-        data = (fileData.toString()).split(',');
-        data = data.filter( item => item !== "" );
-            
-        let products = [] as Product[];
-
-        data.forEach( (line) => {
-
-            let lineSplit = line.split(";");
-            let name = lineSplit[1].slice(0, lineSplit[1].indexOf('('));
-            let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
-
-            let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
+            data = (fileData.toString()).split(',');
+            data = data.filter( item => item !== "" );
+                
+            let products = [] as Product[];
     
-            products.push(product);
+            data.forEach( (line) => {
+    
+                let lineSplit = line.split(";");
+                let name = lineSplit[1].slice(0, lineSplit[1].indexOf('('));
+                let cdt = lineSplit[1].slice(lineSplit[1].indexOf('('), lineSplit[1].length);
+    
+                let product = new Product(lineSplit[0], name, cdt, Number(lineSplit[2]));
+        
+                products.push(product);
+    
+            });
 
-        });
+            return products;
+            
+        }
+        catch(e){
+
+            setError("Erreur lors du traitement du fichier \nLa structure du fichier est incorrecte !\n" + e);
+            setFormatErrorModal(true);
+        }
 
         return products;
 
@@ -134,12 +151,21 @@ export default function DetailsScreen(){
     }
 
 
-    //Traitement lors de la cloture du modal
+    //Traitement lors de la cloture du modal de modification de la quantité d'un produit
     const closeModal = () => {
         
         setModalVisible(false);
         console.log('Produit mis à jour: ', products[Number(selectedIndex)]);
 
+    }
+
+
+    //Cloture du modal aprés enregistrement du fichier
+    const closeSaveModal = () => {
+        
+        setSaveModal(false);
+        setSaveErrorModal(false);
+        setFormatErrorModal(false);
     }
 
 
@@ -159,8 +185,6 @@ export default function DetailsScreen(){
 
     const saveInventoryToFile = async() => {
         
-        let data = formatFileData();
-
         //Demande de permission d'accès au stockage
         // const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, );
         const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
@@ -170,12 +194,21 @@ export default function DetailsScreen(){
             //Création et enregistrement du nouveau fichier
             await FileSystem.StorageAccessFramework.createFileAsync(permission.directoryUri, fileName.toString(), "text/plain")
                 .then( async (uri) => {
+                    let data = formatFileData();
                     FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.UTF8 })
                     .then(r => setSaveModal(true))
-                    .catch(e => alert("Une erreur est survenue lors de l'enregistrement: " + e));
+                    .catch(e => {
+                        setError("Une erreur est survenue lors de l'enregistrement: \n" + e);
+                        setSaveErrorModal(true);
+                        console.log("Une erreur est survenue lors de l'enregistrement:  \n" + e);
+                    });
 
                  })
-                 .catch(e => alert("Une erreur est survenue lors de la création du fichier: " + e));
+                 .catch(e => {
+                    setError("Une erreur est survenue lors de la création du fichier: \n" + e);
+                    setSaveErrorModal(true);
+                    console.log("Une erreur est survenue lors de la création du fichier:  \n" + e);
+                });
         }
 
     }
@@ -188,11 +221,19 @@ export default function DetailsScreen(){
         let data = formatFileData();
 
         FileSystem.writeAsStringAsync(newFileUri, data, { encoding: FileSystem.EncodingType.UTF8 })
-            .catch(e => alert("Une erreur est survenue lors du partage du fichier: " + e));
+            .catch(e => {
+                setError("Une erreur est survenue lors du partage du fichier:  \n" + e);
+                setSaveErrorModal(true);
+                console.log("Une erreur est survenue lors du partage du fichier:  \n" + e);
+            });
         
         await Sharing.shareAsync(newFileUri)
-            .then(response => console.log(response))
-            .catch(error => console.error(error));
+            .catch(e => {
+                setError("Une erreur est survenue lors du partage du fichier:  \n" +  + e);
+                setSaveErrorModal(true);
+                console.log("Une erreur est survenue lors du partage du fichier:  \n" + e);
+
+            });
 
     }
 
@@ -287,17 +328,9 @@ export default function DetailsScreen(){
                 </KeyboardAvoidingView>
             </Modal>
 
-            <Modal style={styles.saveModal} animationType="fade" visible={saveModal} transparent={ true }>
-                <TouchableOpacity onPress={ () => setSaveModal(false) } style={{flex:1, justifyContent:"center", backgroundColor: 'rgba(0, 0, 0, 0.3)', alignItems:"center"}} activeOpacity={ 1 }>
-                    <TouchableOpacity style={ styles.saveModal } activeOpacity={ 1 }>
-                        <View>
-                            <Text style={{fontSize: 18, fontWeight: "300"}}>Fichier enregistré avec succès !</Text>
-
-                            <Text onPress={ () => setSaveModal(false) } style={{fontSize: 18, fontWeight: "400", textAlign: "right", position:"absolute", bottom:-50, right:0}}>OK</Text>
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            </Modal>
+            <ModalInfo icon={"checkmark-circle-sharp"} iconColor="#02c4ba" isVisible={saveModal} message="Fichier enregistré avec succès !             " buttonText="OK" onClose={closeSaveModal}/>
+            <ModalInfo icon={"warning"} iconColor="#ff9900" isVisible={saveErrorModal} message={error} buttonText="Réessayer" onClose={closeSaveModal}/>
+            <ModalInfo icon={"warning"} iconColor="#ff9900" isVisible={formatErrorModal} message={error} buttonText="Réessayer" onClose={closeSaveModal}/>
 
         </View>
 

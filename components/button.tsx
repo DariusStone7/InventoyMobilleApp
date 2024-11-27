@@ -1,7 +1,5 @@
 import { StyleSheet, View, Pressable, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Key } from "react";
-import { red } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 
 
 type props = {
